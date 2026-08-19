@@ -44,11 +44,30 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isDonateOpen, setIsDonateOpen] = useState(false);
+  const [visitCount, setVisitCount] = useState(1);
 
   const [currentPage, setCurrentPage] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'home';
   });
+
+  // Track visitor: increments +1 strictly on fresh browser/tab visits
+  useEffect(() => {
+    const isNewSession = !sessionStorage.getItem('lengtool_active_visit');
+
+    if (isNewSession) {
+      sessionStorage.setItem('lengtool_active_visit', 'true');
+      
+      const currentTotal = parseInt(localStorage.getItem('lengtool_visitor_count') || '0', 10);
+      const newTotal = currentTotal + 1;
+      
+      localStorage.setItem('lengtool_visitor_count', newTotal.toString());
+      setVisitCount(newTotal);
+    } else {
+      const currentTotal = parseInt(localStorage.getItem('lengtool_visitor_count') || '1', 10);
+      setVisitCount(currentTotal);
+    }
+  }, []);
 
   // Sets browser tab title to "lengtool"
   useEffect(() => {
@@ -123,6 +142,18 @@ export default function App() {
           <>
             {/* Animated Hero Header */}
             <div className="text-center max-w-3xl mx-auto mb-10 animate-fade-in">
+              {/* Cool Glowing Visitor Badge */}
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 via-sky-500/10 to-indigo-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-medium mb-6 shadow-[0_0_20px_rgba(6,182,212,0.15)] backdrop-blur-md">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+                </span>
+                <span className="tracking-wide text-slate-300">Visited:</span>
+                <span className="font-mono font-bold text-white bg-cyan-500/20 px-2 py-0.5 rounded-md border border-cyan-400/30">
+                  {visitCount}
+                </span>
+              </div>
+
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
                 Welcome to{' '}
                 <span className="text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.3)] animate-pulse">
