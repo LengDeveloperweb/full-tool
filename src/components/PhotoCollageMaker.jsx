@@ -201,10 +201,33 @@ export default function PhotoCollageMaker({ onNavigate }) {
       }
 
       const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `collage_${slotCount}p.png`;
-      link.href = dataUrl;
-      link.click();
+
+      // Detect Mobile Devices (iOS / Android) to handle safe downloading
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Open in a new tab so mobile users can long-press and save to photos
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>Save Collage</title></head>
+              <body style="margin:0;background:#0a0f1d;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;padding:20px;text-align:center;">
+                <p style="margin-bottom:15px;font-size:15px;line-height:1.4;">Long-press the image below and select <b>"Add to Photos"</b> or <b>"Download Image"</b></p>
+                <img src="${dataUrl}" style="max-width:100%;max-height:75vh;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.5);" />
+              </body>
+            </html>
+          `);
+        } else {
+          window.location.href = dataUrl;
+        }
+      } else {
+        // Desktop standard automatic download link trigger
+        const link = document.createElement('a');
+        link.download = `collage_${slotCount}p.png`;
+        link.href = dataUrl;
+        link.click();
+      }
     } catch (err) {
       console.error(err);
       alert('Error generating collage export.');
@@ -389,7 +412,7 @@ export default function PhotoCollageMaker({ onNavigate }) {
             ))}
           </div>
 
-          {/* TAB 1: LAYOUT & SLOT SWITCHER (2P, 3P, 4P, 5P, 6P) */}
+          {/* TAB 1: LAYOUT & SLOT SWITCHER */}
           {activeTab === 'layout' && (
             <div className="space-y-4 animate-fade-in">
               <div>

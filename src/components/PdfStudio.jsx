@@ -2,7 +2,10 @@ import { useState } from 'react';
 import jsPDF from 'jspdf';
 import { PDFDocument } from 'pdf-lib';
 
-const DEFAULT_MARKDOWN = `Use vector assets for high DPI printing.`;
+const DEFAULT_MARKDOWN = `Use vector assets for high DPI printing.
+- Clean typography hierarchy
+- Responsive scaling layout
+- Optimized client-side generation`;
 
 export default function PdfStudio({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('doc');
@@ -18,7 +21,7 @@ export default function PdfStudio({ onNavigate }) {
   const [pdfFiles, setPdfFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const defaultDate = '8/19/2026';
+  const defaultDate = new Date().toLocaleDateString();
 
   const handleDownloadDocPdf = () => {
     setIsProcessing(true);
@@ -115,13 +118,25 @@ export default function PdfStudio({ onNavigate }) {
       doc.setFont('courier', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text('Generated via KodeTool PDF Studio', margin, pageHeight - 10);
+      doc.text('Generated via PDF Studio', margin, pageHeight - 10);
       doc.text('Page 1 of 1', pageWidth - margin, pageHeight - 10, { align: 'right' });
 
-      doc.save(`${docTitle.toLowerCase().replace(/\s+/g, '_')}.pdf`);
+      // Safe export logic for mobile & desktop
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        window.open(blobUrl, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${docTitle.toLowerCase().replace(/\s+/g, '_')}.pdf`;
+        link.click();
+      }
     } catch (err) {
       console.error(err);
-      alert('Error generating document PDF.');
+      alert('Error generating document PDF. Make sure jspdf is installed properly.');
     } finally {
       setIsProcessing(false);
     }
@@ -149,7 +164,13 @@ export default function PdfStudio({ onNavigate }) {
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         doc.addImage(dataUrl, format, 0, 0, pdfWidth, pdfHeight);
       }
-      doc.save('image_bundle.pdf');
+      
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'image_bundle.pdf';
+      link.click();
     } catch (e) {
       console.error(e);
       alert('Error converting images to PDF.');
@@ -177,7 +198,7 @@ export default function PdfStudio({ onNavigate }) {
       link.click();
     } catch (e) {
       console.error(e);
-      alert('Error merging PDFs.');
+      alert('Error merging PDFs. Make sure pdf-lib is installed properly.');
     } finally {
       setIsProcessing(false);
     }
@@ -222,9 +243,6 @@ export default function PdfStudio({ onNavigate }) {
               : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
           Document & Notes to PDF
         </button>
 
@@ -236,9 +254,6 @@ export default function PdfStudio({ onNavigate }) {
               : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
           Images to PDF Bundle
         </button>
 
@@ -250,9 +265,6 @@ export default function PdfStudio({ onNavigate }) {
               : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
           }`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-          </svg>
           Merge PDF Files
         </button>
       </div>
@@ -261,13 +273,6 @@ export default function PdfStudio({ onNavigate }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5 space-y-6">
             <div className="p-5 bg-[#0f172a]/80 rounded-2xl border border-slate-800/80 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                </svg>
-                Document Configuration
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-medium text-slate-400 mb-1">Document Title</label>
@@ -329,9 +334,6 @@ export default function PdfStudio({ onNavigate }) {
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Document Content (Markdown / Text)
                 </label>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  Supports # Headings, - Lists, **Bold**
-                </span>
               </div>
               <textarea
                 rows="10"
@@ -344,11 +346,8 @@ export default function PdfStudio({ onNavigate }) {
             <button
               onClick={handleDownloadDocPdf}
               disabled={isProcessing}
-              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/25 active:scale-95 cursor-pointer disabled:opacity-50"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
               {isProcessing ? 'Generating PDF...' : 'Download Formatted PDF'}
             </button>
           </div>
@@ -356,44 +355,14 @@ export default function PdfStudio({ onNavigate }) {
           <div className="lg:col-span-7 bg-[#070b14] p-6 rounded-2xl border border-slate-800/80 sticky top-6">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs text-slate-400">
               <div className="flex items-center gap-2 font-semibold text-slate-300">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Live Print Layout Preview
+                Live Preview Output Data
               </div>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                PORTRAIT • A4
-              </span>
             </div>
-
-            {/* Replaced White Preview with Select or Drag Images to Convert Dropzone */}
-            <div className="border border-dashed border-slate-700/80 rounded-2xl p-16 text-center bg-[#070b14]/60 transition-all flex flex-col items-center justify-center min-h-[520px]">
-              <input
-                type="file"
-                id="doc-img-drop-input"
-                multiple
-                accept="image/png, image/jpeg, image/webp"
-                onChange={(e) => setImageFiles(Array.from(e.target.files))}
-                className="hidden"
-              />
-              <label htmlFor="doc-img-drop-input" className="cursor-pointer flex flex-col items-center">
-                <div className="p-3.5 bg-[#0a1220] rounded-2xl border border-emerald-500/30 text-emerald-400 mb-4 shadow-lg shadow-emerald-500/5">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <span className="text-base font-bold text-white tracking-wide">Select or Drag Images to Convert</span>
-                <span className="text-xs text-slate-400 mt-2 max-w-xs leading-relaxed">
-                  Upload PNG, JPG, or WebP pictures to combine into a multi-page PDF document.
-                </span>
-                <span className="mt-6 inline-flex items-center gap-2 py-2.5 px-5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-all">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Images
-                </span>
-              </label>
+            <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+              <p className="text-emerald-400 font-bold mb-2"># {docTitle}</p>
+              <p className="text-slate-400 mb-4">{docSubtitle} • By {author}</p>
+              <hr className="border-slate-800 mb-4" />
+              {markdownText}
             </div>
           </div>
         </div>
@@ -411,20 +380,15 @@ export default function PdfStudio({ onNavigate }) {
               className="hidden"
             />
             <label htmlFor="img-bundle-input" className="cursor-pointer flex flex-col items-center">
-              <div className="p-3 bg-[#0a1220] rounded-xl border border-emerald-500/30 text-emerald-400 mb-4">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
               <span className="text-base font-bold text-white tracking-wide">Select or Drag Images to Convert</span>
-              <span className="text-xs text-slate-400 mt-1.5">Supports JPG, PNG, WEBP</span>
+              <span className="text-xs text-slate-400 mt-1.5">{imageFiles.length} file(s) selected</span>
             </label>
           </div>
 
           <button
             onClick={handleImagesToPdf}
             disabled={isProcessing || imageFiles.length === 0}
-            className="w-full py-3.5 px-6 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-80 cursor-pointer shadow-lg"
+            className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-lg"
           >
             {isProcessing ? 'Converting...' : 'Compile Images into PDF'}
           </button>
@@ -443,11 +407,8 @@ export default function PdfStudio({ onNavigate }) {
               className="hidden"
             />
             <label htmlFor="pdf-merge-input" className="cursor-pointer flex flex-col items-center">
-              <svg className="w-12 h-12 text-emerald-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-              </svg>
               <span className="text-sm font-bold text-white">Click or drag PDF files to merge</span>
-              <span className="text-xs text-slate-400 mt-1">Select at least 2 PDF documents</span>
+              <span className="text-xs text-slate-400 mt-1">{pdfFiles.length} file(s) selected</span>
             </label>
           </div>
 

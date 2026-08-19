@@ -59,11 +59,38 @@ export default function QrCodeGenerator({ onNavigate }) {
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const image = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = image;
-    link.download = `qrcode-${activeTab}-${Date.now()}.png`;
-    link.click();
+
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Open preview window for mobile users so they can long-press and save to Photos
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head><title>Save QR Code</title></head>
+              <body style="margin:0;background:#0f172a;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;padding:20px;text-align:center;">
+                <p style="margin-bottom:15px;font-size:15px;line-height:1.4;">Long-press the QR code below and select <b>"Add to Photos"</b> or <b>"Download Image"</b></p>
+                <img src="${dataUrl}" style="max-width:80%;max-height:60vh;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.5);background:#fff;padding:10px;" />
+              </body>
+            </html>
+          `);
+        } else {
+          window.location.href = dataUrl;
+        }
+      } else {
+        // Desktop standard automatic download link trigger
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `qrcode-${activeTab}-${Date.now()}.png`;
+        link.click();
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Could not export QR code image due to browser security restrictions.');
+    }
   };
 
   const tabs = [
