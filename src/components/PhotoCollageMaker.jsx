@@ -19,6 +19,9 @@ export default function PhotoCollageMaker({ onNavigate }) {
   const [captionPosition, setCaptionPosition] = useState('bottom');
   const [isExporting, setIsExporting] = useState(false);
 
+  // Mobile Download Modal State
+  const [mobilePreviewUrl, setMobilePreviewUrl] = useState(null);
+
   const canvasRef = useRef(null);
   const activeUploadSlotRef = useRef(null);
 
@@ -35,12 +38,10 @@ export default function PhotoCollageMaker({ onNavigate }) {
 
     setImages((prev) => {
       const updated = [...prev, ...newImages];
-      // Auto assign unassigned slots if available
       const newSlotImages = { ...slotImages };
       let fileIdx = 0;
       for (let i = 0; i < slotCount; i++) {
         if (!newSlotImages[i] && fileIdx < updated.length) {
-          // Find first image not yet assigned, or just map sequentially
           newSlotImages[i] = updated[fileIdx];
           fileIdx++;
         }
@@ -80,7 +81,6 @@ export default function PhotoCollageMaker({ onNavigate }) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Dynamic Layout Templates based on selected slot count
   const LAYOUTS = {
     2: [{ id: 'split-h', name: '2 Split Horizontal' }, { id: 'split-v', name: '2 Split Vertical' }],
     3: [{ id: 'hero-2-small', name: '1 Big + 2 Small' }, { id: '3-cols', name: '3 Columns Side-by-Side' }, { id: '3-rows', name: '3 Rows Stacked' }],
@@ -128,6 +128,7 @@ export default function PhotoCollageMaker({ onNavigate }) {
                 loadedSlotImages[idx] = img;
                 resolve();
               };
+              img.onerror = () => resolve(); // Prevent hanging if load fails
               img.src = imgObj.url;
             })
         )
@@ -201,26 +202,11 @@ export default function PhotoCollageMaker({ onNavigate }) {
       }
 
       const dataUrl = canvas.toDataURL('image/png');
-
-      // Detect Mobile Devices (iOS / Android) to handle safe downloading
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // Open in a new tab so mobile users can long-press and save to photos
-        const newWindow = window.open();
-        if (newWindow) {
-          newWindow.document.write(`
-            <html>
-              <head><title>Save Collage</title></head>
-              <body style="margin:0;background:#0a0f1d;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:sans-serif;padding:20px;text-align:center;">
-                <p style="margin-bottom:15px;font-size:15px;line-height:1.4;">Long-press the image below and select <b>"Add to Photos"</b> or <b>"Download Image"</b></p>
-                <img src="${dataUrl}" style="max-width:100%;max-height:75vh;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.5);" />
-              </body>
-            </html>
-          `);
-        } else {
-          window.location.href = dataUrl;
-        }
+        // Show in-app mobile modal popup to let user long-press safely
+        setMobilePreviewUrl(dataUrl);
       } else {
         // Desktop standard automatic download link trigger
         const link = document.createElement('a');
@@ -237,19 +223,34 @@ export default function PhotoCollageMaker({ onNavigate }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-[#0a0f1d] text-slate-100 rounded-3xl border border-cyan-500/30 shadow-2xl animate-fade-in font-sans">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-[#0a0f1d] text-slate-100 rounded-3xl border border-cyan-500/30 shadow-2xl animate-fade-in font-sans relative">
+      {/* Mobile Download Modal Overlay */}
+      {mobilePreviewUrl && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 flex flex-col items-center justify-center p-4">
+          <div className="bg-[#0f172a] border border-cyan-500/40 p-4 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <h3 className="text-white font-bold text-base">Ready to Save!</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Long-press the image below and select <b className="text-cyan-400">"Add to Photos"</b> or <b className="text-cyan-400">"Download Image"</b>.
+            </p>
+            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 max-h-[50vh] flex items-center justify-center p-2">
+              <img src={mobilePreviewUrl} alt="Generated Collage" className="max-h-[45vh] object-contain rounded-xl shadow-lg" />
+            </div>
+            <button
+              onClick={() => setMobilePreviewUrl(null)}
+              className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs uppercase transition-all cursor-pointer border border-slate-700"
+            >
+              Close & Return to Studio
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hidden file input for slot-specific uploads */}
       <input
         type="file"
         ref={activeUploadSlotRef}
         accept="image/*"
         className="hidden"
-        onChange={(e) => {
-          const slotIdx = e.target.getAttribute('data-slot-index');
-          if (slotIdx !== null) {
-            handleSlotSpecificUpload(e, Number(slotIdx));
-          }
-        }}
       />
 
       {/* Header */}
@@ -327,7 +328,6 @@ export default function PhotoCollageMaker({ onNavigate }) {
                     {img ? (
                       <>
                         <img src={img.url} alt="" className="w-full h-full object-cover" />
-                        {/* Hover Overlay to Change or Remove Image */}
                         <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <label
                             htmlFor={`slot-file-${idx}`}
@@ -353,7 +353,6 @@ export default function PhotoCollageMaker({ onNavigate }) {
                       </label>
                     )}
 
-                    {/* Hidden file input per slot */}
                     <input
                       type="file"
                       id={`slot-file-${idx}`}
@@ -390,7 +389,6 @@ export default function PhotoCollageMaker({ onNavigate }) {
 
         {/* Right Sidebar Tabbed Controls */}
         <div className="lg:col-span-5 bg-[#0f172a]/90 p-5 rounded-2xl border border-slate-800/80 space-y-5">
-          {/* Top Tabs */}
           <div className="grid grid-cols-4 bg-[#070b14] p-1 rounded-xl border border-slate-800 text-xs font-semibold">
             {[
               { id: 'layout', label: 'Layout' },
@@ -598,7 +596,7 @@ export default function PhotoCollageMaker({ onNavigate }) {
             className="w-full py-3.5 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" md="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             {isExporting ? 'Generating High-Res...' : `Download ${slotCount}P High-Res Collage`}
           </button>

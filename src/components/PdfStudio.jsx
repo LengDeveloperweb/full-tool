@@ -21,6 +21,10 @@ export default function PdfStudio({ onNavigate }) {
   const [pdfFiles, setPdfFiles] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Mobile PDF Preview / Download Modal State
+  const [mobilePreviewUrl, setMobilePreviewUrl] = useState(null);
+  const [mobileFileName, setMobileFileName] = useState('document.pdf');
+
   const defaultDate = new Date().toLocaleDateString();
 
   const handleDownloadDocPdf = () => {
@@ -121,22 +125,23 @@ export default function PdfStudio({ onNavigate }) {
       doc.text('Generated via PDF Studio', margin, pageHeight - 10);
       doc.text('Page 1 of 1', pageWidth - margin, pageHeight - 10, { align: 'right' });
 
-      // Safe export logic for mobile & desktop
       const pdfBlob = doc.output('blob');
       const blobUrl = URL.createObjectURL(pdfBlob);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const fileName = `${docTitle.toLowerCase().replace(/\s+/g, '_')}.pdf`;
 
       if (isMobile) {
-        window.open(blobUrl, '_blank');
+        setMobileFileName(fileName);
+        setMobilePreviewUrl(blobUrl);
       } else {
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = `${docTitle.toLowerCase().replace(/\s+/g, '_')}.pdf`;
+        link.download = fileName;
         link.click();
       }
     } catch (err) {
       console.error(err);
-      alert('Error generating document PDF. Make sure jspdf is installed properly.');
+      alert('Error generating document PDF.');
     } finally {
       setIsProcessing(false);
     }
@@ -167,10 +172,18 @@ export default function PdfStudio({ onNavigate }) {
       
       const pdfBlob = doc.output('blob');
       const blobUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'image_bundle.pdf';
-      link.click();
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const fileName = 'image_bundle.pdf';
+
+      if (isMobile) {
+        setMobileFileName(fileName);
+        setMobilePreviewUrl(blobUrl);
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        link.click();
+      }
     } catch (e) {
       console.error(e);
       alert('Error converting images to PDF.');
@@ -192,20 +205,57 @@ export default function PdfStudio({ onNavigate }) {
       }
       const pdfBytes = await mergedPdf.save();
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'merged_document.pdf';
-      link.click();
+      const blobUrl = URL.createObjectURL(blob);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const fileName = 'merged_document.pdf';
+
+      if (isMobile) {
+        setMobileFileName(fileName);
+        setMobilePreviewUrl(blobUrl);
+      } else {
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        link.click();
+      }
     } catch (e) {
       console.error(e);
-      alert('Error merging PDFs. Make sure pdf-lib is installed properly.');
+      alert('Error merging PDFs.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-[#0a0f1d] text-slate-100 rounded-3xl border border-slate-800/80 shadow-2xl animate-fade-in font-sans">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-[#0a0f1d] text-slate-100 rounded-3xl border border-slate-800/80 shadow-2xl animate-fade-in font-sans relative">
+      {/* Mobile PDF Viewer Modal Overlay */}
+      {mobilePreviewUrl && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 flex flex-col items-center justify-center p-4">
+          <div className="bg-[#0f172a] border border-emerald-500/40 p-5 rounded-3xl max-w-md w-full text-center space-y-4 shadow-2xl">
+            <h3 className="text-white font-bold text-base">PDF Ready for Download!</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Mobile browsers block direct file downloads. Tap the button below to open your PDF, then use your browser controls to save <b className="text-emerald-400">{mobileFileName}</b>.
+            </p>
+            <div className="flex flex-col gap-2 pt-2">
+              <a
+                href={mobilePreviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-md text-center block"
+              >
+                Open PDF in New Tab
+              </a>
+              <button
+                onClick={() => setMobilePreviewUrl(null)}
+                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition-all border border-slate-700 cursor-pointer"
+              >
+                Close & Return
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between pb-6 mb-6 border-b border-slate-800">
         <div>

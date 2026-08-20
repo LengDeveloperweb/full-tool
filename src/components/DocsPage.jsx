@@ -102,7 +102,7 @@ export default function DocsPage() {
         </div>
 
         {/* Main Content Viewer */}
-        <div className="md:col-span-8 lg:col-span-9 bg-slate-900/90 border border-cyan-500/30 rounded-3xl p-8 shadow-xl min-h-[350px]">
+        <div className="md:col-span-8 lg:col-span-9 bg-slate-900/90 border border-cyan-500/30 rounded-3xl p-8 shadow-xl min-h-87.5">
           {currentSection?.content}
         </div>
       </div>
