@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import os
 
 import bcrypt
 import jwt
@@ -25,8 +26,13 @@ Base.metadata.create_all(bind=engine)
 # JWT settings
 # =========================
 
-SECRET_KEY = "your-super-secret-key-change-in-production"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "your-super-secret-key-change-in-production"
+)
+
 ALGORITHM = "HS256"
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
@@ -34,7 +40,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # FastAPI application
 # =========================
 
-app = FastAPI()
+app = FastAPI(
+    title="LengTool API",
+    description="Backend API for LengTool",
+    version="1.0.0"
+)
 
 
 # =========================
@@ -43,12 +53,21 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
+
     allow_origins=[
+        # Local development
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+
+        # IMPORTANT:
+        # Replace this with your real Vercel URL
+        # Example:
+        # "https://lengtool.vercel.app",
     ],
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,7 +78,9 @@ app.add_middleware(
 # OAuth2
 # =========================
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="token"
+)
 
 
 # =========================
@@ -86,7 +107,8 @@ class Token(BaseModel):
 
 def hash_password(password: str) -> str:
     """
-    Hash a password using bcrypt.
+    Hash password using bcrypt.
+
     Bcrypt supports passwords up to 72 bytes.
     """
 
@@ -100,7 +122,7 @@ def hash_password(password: str) -> str:
 
     hashed = bcrypt.hashpw(
         password_bytes,
-        bcrypt.gensalt(),
+        bcrypt.gensalt()
     )
 
     return hashed.decode("utf-8")
@@ -108,14 +130,15 @@ def hash_password(password: str) -> str:
 
 def verify_password(
     plain_password: str,
-    hashed_password: str,
+    hashed_password: str
 ) -> bool:
 
     try:
         return bcrypt.checkpw(
             plain_password.encode("utf-8"),
-            hashed_password.encode("utf-8"),
+            hashed_password.encode("utf-8")
         )
+
     except (ValueError, TypeError):
         return False
 
@@ -128,6 +151,7 @@ def create_access_token(
     data: dict,
     expires_delta: timedelta | None = None,
 ):
+
     to_encode = data.copy()
 
     expire = datetime.now(timezone.utc) + (
@@ -141,7 +165,7 @@ def create_access_token(
     return jwt.encode(
         to_encode,
         SECRET_KEY,
-        algorithm=ALGORITHM,
+        algorithm=ALGORITHM
     )
 
 
@@ -149,7 +173,10 @@ def create_access_token(
 # Signup
 # =========================
 
-@app.post("/signup", response_model=UserResponse)
+@app.post(
+    "/signup",
+    response_model=UserResponse
+)
 def signup(
     user: UserCreate,
     db: Session = Depends(get_db),
@@ -169,7 +196,9 @@ def signup(
         )
 
     # Hash password
-    hashed_password = hash_password(user.password)
+    hashed_password = hash_password(
+        user.password
+    )
 
     # Create user
     new_user = UserDB(
@@ -190,7 +219,10 @@ def signup(
 # Login
 # =========================
 
-@app.post("/token", response_model=Token)
+@app.post(
+    "/token",
+    response_model=Token
+)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
@@ -207,6 +239,7 @@ def login_for_access_token(
         form_data.password,
         user.hashed_password,
     ):
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -215,12 +248,12 @@ def login_for_access_token(
             },
         )
 
-    # Create JWT expiration
+    # JWT expiration
     access_token_expires = timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
-    # Create token
+    # Create JWT
     access_token = create_access_token(
         data={
             "sub": user.username
@@ -238,7 +271,10 @@ def login_for_access_token(
 # Current User
 # =========================
 
-@app.get("/users/me", response_model=UserResponse)
+@app.get(
+    "/users/me",
+    response_model=UserResponse
+)
 def read_users_me(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -284,34 +320,53 @@ def read_users_me(
 
 
 # =========================
-# Visitor Counter Endpoint
+# Visitor Counter
 # =========================
 
 @app.get("/api/visits")
-def get_visitor_count(db: Session = Depends(get_db)):
-    # Increment the visit count atomically in PostgreSQL
+def get_visitor_count(
+    db: Session = Depends(get_db)
+):
+
+    # Increment visitor count
     db.execute(
-        text("UPDATE site_stats SET stat_value = stat_value + 1 WHERE stat_key = 'total_visits'")
+        text(
+            """
+            UPDATE site_stats
+            SET stat_value = stat_value + 1
+            WHERE stat_key = 'total_visits'
+            """
+        )
     )
+
     db.commit()
-    
-    # Fetch the updated count
+
+    # Get updated count
     result = db.execute(
-        text("SELECT stat_value FROM site_stats WHERE stat_key = 'total_visits'")
+        text(
+            """
+            SELECT stat_value
+            FROM site_stats
+            WHERE stat_key = 'total_visits'
+            """
+        )
     ).fetchone()
-    
+
     current_count = result[0] if result else 1
-    
-    return {"visit_count": current_count}
+
+    return {
+        "visit_count": current_count
+    }
 
 
 # =========================
-# Test endpoint
+# Health Check
 # =========================
 
 @app.get("/")
 def root():
 
     return {
-        "message": "FastAPI backend is running"
+        "message": "LengTool FastAPI backend is running",
+        "status": "ok"
     }
