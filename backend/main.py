@@ -61,8 +61,9 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
 
-        # Vercel production frontend (Your custom domain & Vercel deployment URL)
+        # Production domains (Both with and without www)
         "https://www.lengtool.site",
+        "https://lengtool.site",
         "https://full-tool-g3uf-ktm5ifkn6-monglengs-projects.vercel.app",
     ],
     allow_credentials=True,
