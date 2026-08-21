@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import UserDashboard from './UserDashboard';
 
+// Use environment variable if available, otherwise fallback to your Render production backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://full-tool.onrender.com';
+
 export default function AuthFlow() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -21,7 +24,7 @@ export default function AuthFlow() {
       formData.append('username', username);
       formData.append('password', password);
 
-      const response = await fetch('http://localhost:8000/token', {
+      const response = await fetch(`${API_BASE_URL}/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData,
@@ -35,7 +38,7 @@ export default function AuthFlow() {
       localStorage.setItem('access_token', data.access_token);
 
       // 3. Fetch user profile data from FastAPI
-      const profileResponse = await fetch('http://localhost:8000/users/me', {
+      const profileResponse = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${data.access_token}` }
       });
 
