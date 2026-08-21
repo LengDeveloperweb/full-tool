@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function UserDashboard({ userName = 'User', userEmail = '' }) {
-  // State and effect for the live visitor count
-  const [visitorCount, setVisitorCount] = useState(1240);
-
-  useEffect(() => {
+  // Initialize the count from browser storage without updating state in an effect.
+  const [visitorCount] = useState(() => {
     const hasVisited = sessionStorage.getItem('lengtool_session_counted');
     let currentCount = parseInt(localStorage.getItem('lengtool_visitor_count') || '1240', 10);
 
@@ -14,8 +12,8 @@ export default function UserDashboard({ userName = 'User', userEmail = '' }) {
       sessionStorage.setItem('lengtool_session_counted', 'true');
     }
 
-    setVisitorCount(currentCount);
-  }, []);
+    return currentCount;
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-[#0a0f1d] text-slate-100 rounded-3xl border border-slate-800/80 shadow-2xl font-sans">
