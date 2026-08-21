@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+// Use environment variable if available, otherwise fallback to your Render production backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://full-tool.onrender.com';
+
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState('');
@@ -18,7 +21,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     try {
       if (isSignUp) {
         // Sign Up request
-        const res = await fetch('http://localhost:8000/signup', {
+        const res = await fetch(`${API_BASE_URL}/signup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -39,7 +42,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key]))
         .join('&');
 
-      const tokenRes = await fetch('http://localhost:8000/token', {
+      const tokenRes = await fetch(`${API_BASE_URL}/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: formBody,
@@ -51,11 +54,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
       const tokenData = await tokenRes.json();
       
-      // FIXED: Use 'access_token' so App.jsx can read it properly on refresh
+      // Save token to localStorage
       localStorage.setItem('access_token', tokenData.access_token);
 
       // Fetch user profile
-      const profileRes = await fetch('http://localhost:8000/users/me', {
+      const profileRes = await fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
       });
 
