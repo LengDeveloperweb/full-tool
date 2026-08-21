@@ -12,8 +12,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from database import Base, engine, get_db
-from models import UserDB
+# Fixed imports using relative paths for the backend folder structure
+from .database import Base, engine, get_db
+from .models import UserDB
 
 
 # =========================
