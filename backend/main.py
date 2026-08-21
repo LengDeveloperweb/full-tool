@@ -106,7 +106,6 @@ def hash_password(password: str) -> str:
     Hash password using bcrypt.
     Bcrypt supports passwords up to 72 bytes.
     """
-
     password_bytes = password.encode("utf-8")
 
     if len(password_bytes) > 72:
@@ -127,13 +126,11 @@ def verify_password(
     plain_password: str,
     hashed_password: str
 ) -> bool:
-
     try:
         return bcrypt.checkpw(
             plain_password.encode("utf-8"),
             hashed_password.encode("utf-8")
         )
-
     except (ValueError, TypeError):
         return False
 
@@ -146,7 +143,6 @@ def create_access_token(
     data: dict,
     expires_delta: timedelta | None = None,
 ):
-
     to_encode = data.copy()
 
     expire = datetime.now(timezone.utc) + (
@@ -176,7 +172,6 @@ def signup(
     user: UserCreate,
     db: Session = Depends(get_db),
 ):
-
     existing_user = (
         db.query(UserDB)
         .filter(UserDB.username == user.username)
@@ -219,7 +214,6 @@ def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-
     user = (
         db.query(UserDB)
         .filter(UserDB.username == form_data.username)
@@ -267,7 +261,6 @@ def read_users_me(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -277,7 +270,6 @@ def read_users_me(
     )
 
     try:
-
         payload = jwt.decode(
             token,
             SECRET_KEY,
@@ -314,7 +306,6 @@ def read_users_me(
 def get_visitor_count(
     db: Session = Depends(get_db)
 ):
-
     db.execute(
         text(
             """
@@ -350,7 +341,6 @@ def get_visitor_count(
 
 @app.get("/")
 def root():
-
     return {
         "message": "LengTool FastAPI backend is running",
         "status": "ok"
@@ -363,7 +353,6 @@ def root():
 
 @app.get("/api/hello")
 def hello():
-
     return {
         "message": "Hello from LengTool FastAPI!"
     }
