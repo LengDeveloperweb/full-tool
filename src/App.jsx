@@ -13,6 +13,9 @@ import QrCodeGenerator from './components/QrCodeGenerator';
 import PdfStudio from './components/PdfStudio';
 import PhotoCollageMaker from './components/PhotoCollageMaker';
 
+// Live Render backend URL configuration
+const API_BASE_URL = 'https://full-tool.onrender.com';
+
 const CATEGORIES = ['All', 'Media', 'Developer', 'Utility', 'Design', 'Text'];
 
 const TOOLS_DATA = [
@@ -98,7 +101,7 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      fetch('http://localhost:8000/users/me', {
+      fetch(`${API_BASE_URL}/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.ok ? res.json() : Promise.reject())
@@ -118,7 +121,7 @@ export default function App() {
     if (hasFetchedVisit.current) return;
     hasFetchedVisit.current = true;
 
-    fetch('http://localhost:8000/api/visits')
+    fetch(`${API_BASE_URL}/api/visits`)
       .then(res => res.json())
       .then(data => {
         if (data && data.visit_count) {
