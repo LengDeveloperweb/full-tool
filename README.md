@@ -18,4 +18,9 @@ If you are developing a production application, we recommend using TypeScript wi
 
 python -m uvicorn backend.main:app --reload
 npm run dev
-uvicorn backend.main:app --host 0.0.0.0 --port 8000
+uvicorn backend.main:app --host 0.0.0.0 --port 8000\
+
+git add .
+git commit -m "Update project"
+git pull origin main --rebase
+git push origin main

@@ -2,7 +2,7 @@ export default function ToolCard({ title, description, category, badge, onClick 
   return (
     <div 
       onClick={onClick}
-      className="animate-fade-in group relative rounded-2xl bg-slate-800/80 dark:bg-slate-900/80 border border-slate-700/80 dark:border-cyan-900/40 p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10 hover:border-cyan-400/60 cursor-pointer overflow-hidden"
+      className="animate-fade-in group relative h-full rounded-2xl bg-slate-800/80 dark:bg-slate-900/80 border border-slate-700/80 dark:border-cyan-900/40 p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10 hover:border-cyan-400/60 cursor-pointer overflow-hidden"
     >
       
       {/* Subtle background gradient glow effect on hover */}
@@ -10,7 +10,7 @@ export default function ToolCard({ title, description, category, badge, onClick 
 
       <div>
         {/* Header Badges */}
-        <div className="flex items-center justify-between mb-3 relative z-10">
+        <div className="flex items-center justify-between mb-3 relative z-10 pr-8">
           <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-md bg-slate-700/60 dark:bg-slate-800 text-cyan-400 border border-cyan-500/20 transition-colors duration-200 group-hover:border-cyan-400/40">
             {category}
           </span>
@@ -22,10 +22,10 @@ export default function ToolCard({ title, description, category, badge, onClick 
         </div>
 
         {/* Title and Description */}
-        <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors duration-200 relative z-10">
+        <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors duration-200 relative z-10 line-clamp-1">
           {title}
         </h3>
-        <p className="mt-2 text-sm text-slate-300 dark:text-cyan-100/70 leading-relaxed relative z-10">
+        <p className="mt-2 text-sm text-slate-300 dark:text-cyan-100/70 leading-relaxed relative z-10 line-clamp-2">
           {description}
         </p>
       </div>
