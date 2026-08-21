@@ -107,6 +107,8 @@ export default function PhotoCollageMaker({ onNavigate }) {
     setIsExporting(true);
     try {
       const canvas = canvasRef.current;
+      if (!canvas) return;
+
       const ctx = canvas.getContext('2d');
       const { w: width, h: height } = getAspectRatioDimensions();
       canvas.width = width;
@@ -201,11 +203,40 @@ export default function PhotoCollageMaker({ onNavigate }) {
         ctx.fillText(captionText, width / 2, capY);
       }
 
-      const dataUrl = canvas.toDataURL('image/png');
+      // Convert canvas to blob cleanly using Promise wrapper for safe async context
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/png');
+      });
+
+      if (!blob) {
+        throw new Error("Canvas blob generation failed.");
+      }
+
+      const file = new File([blob], `collage_${slotCount}p.png`, { type: 'image/png' });
+
+      // Check if mobile browser supports native sharing (saves directly to phone gallery/files)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'My Photo Collage',
+            text: 'Check out my collage made on LengTool!',
+          });
+          return;
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.log('Share failed, falling back to preview/standard download');
+          } else {
+            return; // User canceled the share sheet
+          }
+        }
+      }
+
+      const dataUrl = URL.createObjectURL(blob);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // Show in-app mobile modal popup to let user long-press safely
+        // Show in-app mobile modal popup to let user long-press safely as fallback
         setMobilePreviewUrl(dataUrl);
       } else {
         // Desktop standard automatic download link trigger
@@ -213,10 +244,11 @@ export default function PhotoCollageMaker({ onNavigate }) {
         link.download = `collage_${slotCount}p.png`;
         link.href = dataUrl;
         link.click();
+        URL.revokeObjectURL(dataUrl);
       }
     } catch (err) {
-      console.error(err);
-      alert('Error generating collage export.');
+      console.error("Download failed:", err);
+      alert('Error generating collage export. Try long-pressing the preview if on mobile.');
     } finally {
       setIsExporting(false);
     }
@@ -236,7 +268,10 @@ export default function PhotoCollageMaker({ onNavigate }) {
               <img src={mobilePreviewUrl} alt="Generated Collage" className="max-h-[45vh] object-contain rounded-xl shadow-lg" />
             </div>
             <button
-              onClick={() => setMobilePreviewUrl(null)}
+              onClick={() => {
+                URL.revokeObjectURL(mobilePreviewUrl);
+                setMobilePreviewUrl(null);
+              }}
               className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs uppercase transition-all cursor-pointer border border-slate-700"
             >
               Close & Return to Studio
@@ -596,7 +631,7 @@ export default function PhotoCollageMaker({ onNavigate }) {
             className="w-full py-3.5 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" md="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             {isExporting ? 'Generating High-Res...' : `Download ${slotCount}P High-Res Collage`}
           </button>
