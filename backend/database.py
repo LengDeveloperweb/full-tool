@@ -3,11 +3,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# This checks Render's environment variable first; if it's missing (like on your PC), it falls back to your local pgAdmin database
-SQLALCHEMY_DATABASE_URL = os.getenv(
+# 1. Get the URL from Render, or fall back to your local PC database
+db_url = os.getenv(
     "DATABASE_URL", 
     "postgresql://postgres:8828@localhost:5432/lengtool_db"
 )
+
+# 2. Fix the Render string if it starts with 'postgres://' instead of 'postgresql://'
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+SQLALCHEMY_DATABASE_URL = db_url
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
