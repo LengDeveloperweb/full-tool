@@ -7,12 +7,13 @@ import jwt
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from backend.database import Base, engine, get_db
-from backend.models import UserDB
+from database import Base, engine, get_db
+from models import UserDB
 
 
 # =========================
@@ -32,7 +33,6 @@ SECRET_KEY = os.getenv(
 )
 
 ALGORITHM = "HS256"
-
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
@@ -53,21 +53,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-
     allow_origins=[
         # Local development
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-
         "http://localhost:3000",
         "http://127.0.0.1:3000",
 
-        # IMPORTANT:
-        # Replace this with your real Vercel URL
-        # Example:
-        # "https://lengtool.vercel.app",
+        # Vercel production frontend
+        "https://full-tool-g3uf-ktm5ifkn6-monglengs-projects.vercel.app",
     ],
-
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -108,7 +103,6 @@ class Token(BaseModel):
 def hash_password(password: str) -> str:
     """
     Hash password using bcrypt.
-
     Bcrypt supports passwords up to 72 bytes.
     """
 
@@ -182,7 +176,6 @@ def signup(
     db: Session = Depends(get_db),
 ):
 
-    # Check existing username
     existing_user = (
         db.query(UserDB)
         .filter(UserDB.username == user.username)
@@ -195,12 +188,10 @@ def signup(
             detail="Username already registered",
         )
 
-    # Hash password
     hashed_password = hash_password(
         user.password
     )
 
-    # Create user
     new_user = UserDB(
         username=user.username,
         hashed_password=hashed_password,
@@ -234,12 +225,10 @@ def login_for_access_token(
         .first()
     )
 
-    # Check username and password
     if not user or not verify_password(
         form_data.password,
         user.hashed_password,
     ):
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -248,12 +237,10 @@ def login_for_access_token(
             },
         )
 
-    # JWT expiration
     access_token_expires = timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
-    # Create JWT
     access_token = create_access_token(
         data={
             "sub": user.username
@@ -304,7 +291,6 @@ def read_users_me(
     except jwt.PyJWTError:
         raise credentials_exception
 
-    # Find user
     user = (
         db.query(UserDB)
         .filter(UserDB.username == username)
@@ -328,7 +314,6 @@ def get_visitor_count(
     db: Session = Depends(get_db)
 ):
 
-    # Increment visitor count
     db.execute(
         text(
             """
@@ -341,7 +326,6 @@ def get_visitor_count(
 
     db.commit()
 
-    # Get updated count
     result = db.execute(
         text(
             """
@@ -369,4 +353,16 @@ def root():
     return {
         "message": "LengTool FastAPI backend is running",
         "status": "ok"
+    }
+
+
+# =========================
+# Test API
+# =========================
+
+@app.get("/api/hello")
+def hello():
+
+    return {
+        "message": "Hello from LengTool FastAPI!"
     }
