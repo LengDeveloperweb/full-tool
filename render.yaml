@@ -1,0 +1,21 @@
+services:
+  # Backend Python Web Service
+  - type: web
+    name: your-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend.onrender.com
+
+  # Frontend React Static Site
+  - type: static
+    name: your-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist  # or ./build for CRA
+    envVars:
+      - key: VITE_API_URL  # or REACT_APP_API_URL
+        value: https://your-backend.onrender.com
